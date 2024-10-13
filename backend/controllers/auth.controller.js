@@ -6,25 +6,29 @@ export const signup = async (req, res) => {
     try {
         const { username, fullname, email, password } = req.body;
 
+        if (!username || !fullname || !email || !password) {
+            return res.status(400).json({ error: "Please provide for all fields" });
+        }
+
         // email format validation 
         const regex = /^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/;
         if (!regex.test(email)) {
-            return res.status(400).json({ success: false, message: "Invalid email" });
+            return res.status(400).json({ error: "Invalid email" });
         }
 
         const existingUser = await User.findOne({ username });
         const existingEmail = await User.findOne({ email });
 
         if (existingUser) {
-            return res.status(400).json({ success: false, message: "Username already exists" });
+            return res.status(400).json({ error: "Username already exists" });
         }
 
         if (existingEmail) {
-            return res.status(400).json({ success: false, message: "Email already exists" });
+            return res.status(400).json({ error: "Email already exists" });
         }
 
         if (password.length < 6) {
-            return res.status(400).json({ success: false, message: "Password must have at least 6 characters" });
+            return res.status(400).json({ error: "Password must have at least 6 characters" });
         }
 
         const salt = await bcrypt.genSalt(10);

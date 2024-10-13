@@ -6,12 +6,26 @@ import { FaUser } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { BiLogOut } from "react-icons/bi";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+
 const Sidebar = () => {
-    const data = {
-        fullName: "John Doe",
-        username: "johndoe",
-        profileImg: "/avatars/boy1.png",
-    };
+    const { data } = useQuery({ queryKey: ['authUser'] });
+    const queryClient = useQueryClient();
+
+    const { mutate: logout } = useMutation({
+        mutationFn: async () => {
+            await fetch('/api/auth/logout', {
+                method: 'POST'
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['authUser'] });
+        },
+        onError: () => {
+            toast.error('Logout failed');
+        }
+    });
 
     return (
         <div className='md:flex-[2_2_0] w-18 max-w-52'>
@@ -50,23 +64,44 @@ const Sidebar = () => {
                     </li>
                 </ul>
                 {data && (
-                    <Link
-                        to={`/profile/${data.username}`}
-                        className='mt-auto mb-10 flex gap-2 items-start transition-all duration-300 hover:bg-[#181818] py-2 px-4 rounded-full'
-                    >
-                        <div className='avatar hidden md:inline-flex'>
-                            <div className='w-8 rounded-full'>
-                                <img src={data?.profileImg || "/avatar-placeholder.png"} />
+                    <>
+                        <Link
+                            to={`/profile/${data.username}`}
+                            className='mt-auto mb-10 flex gap-2 items-start transition-all duration-300 hover:bg-[#181818] py-2 px-4 rounded-full'
+                        >
+                            <div className='avatar hidden md:inline-flex'>
+                                <div className='w-8 rounded-full'>
+                                    <img src={data?.profileImg || "/avatar-placeholder.png"} />
+                                </div>
                             </div>
-                        </div>
-                        <div className='flex justify-between flex-1'>
-                            <div className='hidden md:block'>
-                                <p className='text-white font-bold text-sm w-20 truncate'>{data?.fullName}</p>
-                                <p className='text-slate-500 text-sm'>@{data?.username}</p>
+                            <div className='flex justify-between flex-1'>
+                                <div className='hidden md:block'>
+                                    <p className='text-white font-bold text-sm w-20 truncate'>{data?.fullname}</p>
+                                    <p className='text-slate-500 text-sm'>@{data?.username}</p>
+                                </div>
+                                <BiLogOut className='w-5 h-5 cursor-pointer'
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        document.getElementById('logout_confirm_modal').showModal()
+                                    }} />
                             </div>
-                            <BiLogOut className='w-5 h-5 cursor-pointer' />
-                        </div>
-                    </Link>
+                        </Link>
+                        <dialog id="logout_confirm_modal" className="modal">
+                            <div className="modal-box">
+                                <form method="dialog">
+                                    {/* if there is a button in form, it will close the modal */}
+                                    <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                                </form>
+                                <h3 className="font-bold text-lg">Logout!</h3>
+                                <p className="py-4 text-red-500">Are you sure you want to logout?</p>
+                                <div className="flex justify-end">
+                                    <button
+                                        onClick={logout}
+                                        className="btn btn-sm btn-primary text-gray-50 self-end">Logout</button>
+                                </div>
+                            </div>
+                        </dialog>
+                    </>
                 )}
             </div>
         </div>
