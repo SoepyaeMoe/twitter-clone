@@ -64,13 +64,23 @@ export const commentOnPost = async (req, res) => {
         if (!text) return res.status(400).json({ error: "Text field is require" });
         post.comments.push({ user: userId, text });
         await post.save();
-        return res.status(201).json(post);
+
+        const updatedPost = await Post.findById(postId)
+            .populate({
+                path: "user",
+                select: "-password",
+            })
+            .populate({
+                path: "comments.user",
+                select: "-password",
+            });
+
+        return res.status(201).json(updatedPost);
 
     } catch (error) {
         console.log('Error in comment on post: ', error.message)
         return res.status(500).json({ error: "Internal server error" });
     }
-
 }
 
 export const likeUnlikePost = async (req, res) => {
