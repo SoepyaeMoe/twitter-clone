@@ -2,23 +2,44 @@ import { CiImageOn } from "react-icons/ci";
 import { BsEmojiSmileFill } from "react-icons/bs";
 import { useRef, useState } from "react";
 import { IoCloseSharp } from "react-icons/io5";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const CreatePost = () => {
     const [text, setText] = useState("");
     const [img, setImg] = useState(null);
 
+    const { data } = useQuery({ queryKey: ['authUser'] });
+    const queryClient = useQueryClient();
+
+    const { mutate: createPost, isPending, isError } = useMutation({
+        mutationFn: async () => {
+            try {
+                const res = await fetch('/api/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text, img })
+                });
+                if (!res.ok) {
+                    throw new Error(data.error || 'Something went wroung');
+                }
+            } catch (error) {
+                throw new Error(error);
+            }
+        },
+        onSuccess: () => {
+            setText("");
+            setImg(null);
+            queryClient.invalidateQueries({ queryKey: ['posts'] });
+        }
+    });
+
     const imgRef = useRef(null);
-
-    const isPending = false;
-    const isError = false;
-
-    const data = {
-        profileImg: "/avatars/boy1.png",
-    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        alert("Post created successfully");
+        createPost();
     };
 
     const handleImgChange = (e) => {

@@ -17,7 +17,7 @@ cloudinary.config({
 });
 const PORT = process.env.PORT || 8080;
 
-app.use(express.json()); //to parse request body to json object 
+app.use(express.json({ limit: '5mb' })); //to parse request body to json object 
 app.use(cookieParser()); //cookie parser middleware
 
 app.use('/api/auth', authRoutes);

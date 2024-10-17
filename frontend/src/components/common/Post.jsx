@@ -5,25 +5,90 @@ import { FaRegBookmark } from "react-icons/fa6";
 import { FaTrash } from "react-icons/fa";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import toast from 'react-hot-toast';
+import LoadingSpinner from './LoadingSpinner';
 
 const Post = ({ post }) => {
     const [comment, setComment] = useState("");
+
+    const { data: authUser } = useQuery({ queryKey: ['authUser'] });
+
+    const queryClient = useQueryClient();
+
+    // delete post
+    const { mutate: deletePost, isPending } = useMutation({
+        mutationFn: async () => {
+            try {
+                const res = await fetch(`/api/posts/${post._id}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) {
+                    throw new Error("Something went wroung");
+                }
+                const data = await res.json();
+                return data;
+            } catch (error) {
+                throw new Error(error)
+            }
+        },
+        onSuccess: () => {
+            toast.success("Delete post success");
+            queryClient.invalidateQueries({ queryKey: ['posts'] });
+        }
+    });
+
+    // like post
+    const { mutate: likePost, isPending: isLiking } = useMutation({
+        mutationFn: async () => {
+            try {
+                const res = await fetch(`/api/posts/like/${post._id}`, {
+                    method: 'POST'
+                });
+                if (!res.ok) {
+                    throw new Error(data.error || 'Something went wroung')
+                }
+                const data = await res.json();
+                return data;
+            } catch (error) {
+                throw new Error(error);
+            }
+        },
+        onSuccess: (updatedLikes) => {
+            queryClient.setQueryData(["posts"], (oldData) => {
+                return oldData.map((p) => {
+                    if (p._id === post._id) {
+                        return { ...p, likes: updatedLikes };
+                    }
+                    return p;
+                });
+            });
+        }
+    });
+
     const postOwner = post.user;
-    const isLiked = false;
+    const isLiked = post.likes.includes(authUser._id);
 
-    const isMyPost = true;
+    const isMyPost = post.user._id === authUser._id;
 
-    const formattedDate = "1h";
+    const formattedDate = post.createdAt;
 
     const isCommenting = false;
 
-    const handleDeletePost = () => { };
+    const handleDeletePost = () => {
+        deletePost();
+    };
 
     const handlePostComment = (e) => {
         e.preventDefault();
     };
 
-    const handleLikePost = () => { };
+    const handleLikePost = () => {
+        if (isLiking) {
+            return;
+        }
+        likePost();
+    };
 
     return (
         <>
@@ -45,7 +110,8 @@ const Post = ({ post }) => {
                         </span>
                         {isMyPost && (
                             <span className='flex justify-end flex-1'>
-                                <FaTrash className='cursor-pointer hover:text-red-500' onClick={handleDeletePost} />
+                                {!isPending && <FaTrash className='cursor-pointer hover:text-red-500' onClick={handleDeletePost} />}
+                                {isPending && <LoadingSpinner size="sm" />}
                             </span>
                         )}
                     </div>

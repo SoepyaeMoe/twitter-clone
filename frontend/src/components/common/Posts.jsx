@@ -18,7 +18,7 @@ const Posts = ({ feedType }) => {
 
     const END_POINT = getEndPoint();
 
-    const { isLoading, data: POSTS, refetch, isRefetching } = useQuery({
+    const { isPending, data: POSTS, refetch, isRefetching } = useQuery({
         queryKey: ['posts'],
         queryFn: async () => {
             try {
@@ -37,15 +37,15 @@ const Posts = ({ feedType }) => {
 
     return (
         <>
-            {isLoading || isRefetching && (
+            {isPending || isRefetching && (
                 <div className='flex flex-col justify-center'>
                     <PostSkeleton />
                     <PostSkeleton />
                     <PostSkeleton />
                 </div>
             )}
-            {!isLoading && !isRefetching && POSTS?.length === 0 && <p className='text-center my-4'>No posts in this tab. Switch 👻</p>}
-            {!isLoading && !isRefetching && POSTS && (
+            {!isPending && !isRefetching && POSTS?.length === 0 && <p className='text-center my-4'>No posts in this tab. Switch 👻</p>}
+            {!isPending && !isRefetching && POSTS && (
                 <div>
                     {POSTS.map((post) => (
                         <Post key={post._id} post={post} />
